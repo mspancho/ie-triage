@@ -155,7 +155,7 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## Acknowledgements
 
-The author(s) of this project thank Dr. Neil Sarkar for the opportunity to work on this problem as part of the final project assignment for *BIOL 1595: Artificial Intelligence in Healthcare* offered for the Spring 2026 semester at Brown University.
+The author(s) of this project thank Dr. Neil Sarkar for the opportunity to work on this problem as part of the final project assignment for *BIOL 1595: Artificial Intelligence in Healthcare*, offered during the Spring 2026 semester at Brown University.
 
 ## License
 
