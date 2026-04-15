@@ -8,7 +8,7 @@ data/csv/
 data/npz/
 
 # Generated results (plots, tables)
-results/
+# results/
 
 # Job logs
 logs/
