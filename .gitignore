@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Data files
+*.npz
+*.csv
+
+# Generated plots/figures
+*.png
+
+# Job logs
+logs/
+
+# ML results (generated outputs)
+ml_results/
