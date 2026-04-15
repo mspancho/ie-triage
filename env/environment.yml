@@ -1,0 +1,17 @@
+name: ie-triage
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - pip
+  - pip:
+      - torch
+      - transformers
+      - xgboost

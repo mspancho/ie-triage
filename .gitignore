@@ -3,15 +3,13 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Data files
-*.npz
-*.csv
+# Data files (contain MIMIC-IV derived data — do not distribute)
+data/csv/
+data/npz/
 
-# Generated plots/figures
-*.png
+# Generated results (plots, tables)
+results/
 
 # Job logs
 logs/
-
-# ML results (generated outputs)
-ml_results/
+analysis_report.txt
