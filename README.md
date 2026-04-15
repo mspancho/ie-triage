@@ -153,6 +153,10 @@ python src/pipeline/ml_pipeline.py \
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
+## Acknowledgements
+
+The author(s) of this project thank Dr. Neil Sarkar for the opportunity to work on this problem as part of the final project assignment for *BIOL 1595: Artificial Intelligence in Healthcare* offered for the Spring 2026 semester at Brown University.
+
 ## License
 
 [MIT](LICENSE)
