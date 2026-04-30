@@ -9,6 +9,7 @@ Infective endocarditis is a life-threatening cardiac infection that is difficult
 1. Extracts and validates an IE cohort from MIMIC-IV ED and hospital records
 2. Engineers feature representations using clinical NLP embeddings, vitals, and demographics
 3. Trains and evaluates Logistic Regression, Random Forest, and XGBoost models with stratified cross-validation
+4. Visualizes feature importances for each model and feature set
 
 The goal is to assess whether ED triage data alone can flag patients at risk for IE, supporting earlier diagnostic workup.
 
@@ -29,6 +30,7 @@ ie-triage/
 ├── results/
 │   ├── eda/                   # EDA plots, Table 1, demographic comparisons
 │   └── ml/                    # ML evaluation plots (ROC, PR, DCA curves)
+│       └── feature_importance/ # Feature importance bar charts per model/option
 ├── logs/                      # Slurm job logs
 └── src/
     └── pipeline/              # Python analysis scripts
@@ -36,6 +38,7 @@ ie-triage/
         ├── proj_feasibility.py
         ├── feature_engineering.py
         ├── ml_pipeline.py
+        ├── feature_importance.py
         ├── table1.py
         └── demographic_eda.py
 ```
@@ -50,6 +53,7 @@ ie-triage/
 | `proj_feasibility.py` | Preliminary feasibility analysis that estimates IE prevalence in the ED and assesses whether the MIMIC-IV data supports the study design. |
 | `feature_engineering.py` | Feature engineering that produces four alternative representations: (1) categorical chief complaints, (2) PCA-reduced BERT embeddings, (3) a hybrid of both, and (4) no chief complaint features. |
 | `ml_pipeline.py` | Runs Logistic Regression (L1), Random Forest, and XGBoost over all feature sets with 5-fold stratified CV; reports AUROC, AUPRC, sensitivity, specificity, and generates ROC, PR, and decision curve plots. |
+| `feature_importance.py` | Computes mean ± SD feature importances across 5-fold CV for each (feature set, model) combination and saves horizontal bar charts of the top 20 features to `results/ml/feature_importance/`. Uses \|coefficient\| for Logistic Regression and Gini/gain importances for tree-based models. |
 | `table1.py` | Generates Table 1 descriptive statistics (means, medians, counts, percentages) stratified by IE label, following Hayes-Larson et al. (2019) guidelines. |
 | `demographic_eda.py` | Case vs. control demographic comparison using seaborn: age, gender, race, acuity, and vitals distributions with box plots, violin plots, bar charts, and correlation heatmaps. |
 
@@ -130,6 +134,11 @@ python src/pipeline/feature_engineering.py \
 python src/pipeline/ml_pipeline.py \
     --data-dir data/npz \
     --output-dir results/ml
+
+# 5. Feature importance plots
+python src/pipeline/feature_importance.py \
+    --data-dir data/npz \
+    --output-dir results/ml/feature_importance
 ```
 
 ### `run_all.sh` options
