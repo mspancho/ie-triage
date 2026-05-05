@@ -1,0 +1,9 @@
+Option,Model,Metric,Value
+Option1_Categorical,RandomForest,Sensitivity,0.0
+Option1_Categorical,RandomForest,Specificity,1.0
+Option1_Categorical,RandomForest,PPV,0.0
+Option1_Categorical,RandomForest,NPV,0.8888888888888888
+Option1_Categorical,RandomForest,Precision,0.0
+Option1_Categorical,RandomForest,Recall,0.0
+Option1_Categorical,RandomForest,AUROC,0.4486111111111111
+Option1_Categorical,RandomForest,AUPRC,0.09845550187053945

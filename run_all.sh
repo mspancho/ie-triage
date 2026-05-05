@@ -12,6 +12,7 @@
 # Required:
 #   --mimic-hosp DIR      Path to MIMIC-IV hosp directory
 #   --mimic-ed DIR        Path to MIMIC-IV ED directory
+#   --mc-med-dir DIR      Path to MC-MED data directory (for external validation)
 #
 # Optional:
 #   --conda-env ENV       Conda environment name (default: ie-triage)
@@ -34,6 +35,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 # ── Defaults ─────────────────────────────────────────────────────────────────
 MIMIC_HOSP=""
 MIMIC_ED=""
+MC_MED_DIR=""
 CONDA_ENV="ie-triage"
 PARTITION_GPU="gpu"
 PARTITION_CPU="batch"
@@ -51,6 +53,7 @@ NPZ_DIR="${PROJECT_ROOT}/data/npz"
 ML_DIR="${PROJECT_ROOT}/results/ml"
 FEAT_IMP_DIR="${ML_DIR}/feature_importance"
 EDA_DIR="${PROJECT_ROOT}/results/eda"
+EXT_VAL_DIR="${PROJECT_ROOT}/results/ext_val"
 LOG_DIR="${PROJECT_ROOT}/logs"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
@@ -58,6 +61,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --mimic-hosp)     MIMIC_HOSP="$2"; shift 2 ;;
         --mimic-ed)       MIMIC_ED="$2"; shift 2 ;;
+        --mc-med-dir)     MC_MED_DIR="$2"; shift 2 ;;
         --conda-env)      CONDA_ENV="$2"; shift 2 ;;
         --partition-gpu)  PARTITION_GPU="$2"; shift 2 ;;
         --partition-cpu)  PARTITION_CPU="$2"; shift 2 ;;
@@ -76,14 +80,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ── Validate required args ───────────────────────────────────────────────────
-if [[ -z "${MIMIC_HOSP}" || -z "${MIMIC_ED}" ]]; then
-    echo "Error: --mimic-hosp and --mimic-ed are required."
-    echo "Usage: bash run_all.sh --mimic-hosp /path/to/hosp --mimic-ed /path/to/ed [OPTIONS]"
+if [[ -z "${MIMIC_HOSP}" || -z "${MIMIC_ED}" || -z "${MC_MED_DIR}" ]]; then
+    echo "Error: --mimic-hosp, --mimic-ed, and --mc-med-dir are required."
+    echo "Usage: bash run_all.sh --mimic-hosp /path/to/hosp --mimic-ed /path/to/ed --mc-med-dir /path/to/mc-med/data [OPTIONS]"
     exit 1
 fi
 
 # ── Create output directories ────────────────────────────────────────────────
-mkdir -p "${CSV_DIR}" "${NPZ_DIR}" "${ML_DIR}" "${EDA_DIR}" "${LOG_DIR}" "${FEAT_IMP_DIR}"
+mkdir -p "${CSV_DIR}" "${NPZ_DIR}" "${ML_DIR}" "${EDA_DIR}" "${EXT_VAL_DIR}" "${LOG_DIR}" "${FEAT_IMP_DIR}"
 
 # ── Log all output to analysis_report.txt ────────────────────────────────────
 REPORT="${PROJECT_ROOT}/analysis_report.txt"
@@ -94,6 +98,7 @@ echo "  IE Triage — Full Analysis Pipeline"
 echo "═══════════════════════════════════════════════════════════════════"
 echo "  MIMIC-IV hosp:  ${MIMIC_HOSP}"
 echo "  MIMIC-IV ED:    ${MIMIC_ED}"
+echo "  MC-MED data:    ${MC_MED_DIR}"
 echo "  Conda env:      ${CONDA_ENV}"
 echo "  Local mode:     ${LOCAL}"
 echo "  Project root:   ${PROJECT_ROOT}"
@@ -101,7 +106,7 @@ echo "════════════════════════�
 
 # ── Step 1: Feasibility analysis ─────────────────────────────────────────────
 echo ""
-echo "[Step 1/7] Feasibility analysis..."
+echo "[Step 1/12] Feasibility analysis..."
 python "${PROJECT_ROOT}/src/pipeline/proj_feasibility.py" \
     --mimic-hosp "${MIMIC_HOSP}" \
     --mimic-ed "${MIMIC_ED}" \
@@ -109,7 +114,7 @@ python "${PROJECT_ROOT}/src/pipeline/proj_feasibility.py" \
 
 # ── Step 2: Cohort creation ──────────────────────────────────────────────────
 echo ""
-echo "[Step 2/7] Cohort creation..."
+echo "[Step 2/12] Cohort creation..."
 python "${PROJECT_ROOT}/src/pipeline/cohort_creation.py" \
     --mimic-hosp "${MIMIC_HOSP}" \
     --mimic-ed "${MIMIC_ED}" \
@@ -119,7 +124,7 @@ COHORT_CSV="${CSV_DIR}/proj1_ie_triage_cohort.csv"
 
 # ── Step 3: Table 1 ─────────────────────────────────────────────────────────
 echo ""
-echo "[Step 3/7] Generating Table 1..."
+echo "[Step 3/12] Generating Table 1..."
 python "${PROJECT_ROOT}/src/pipeline/table1.py" \
     --cohort-csv "${COHORT_CSV}" \
     --csv-dir "${CSV_DIR}" \
@@ -127,14 +132,14 @@ python "${PROJECT_ROOT}/src/pipeline/table1.py" \
 
 # ── Step 4: Demographic EDA ─────────────────────────────────────────────────
 echo ""
-echo "[Step 4/7] Demographic EDA (case vs. control)..."
+echo "[Step 4/12] Demographic EDA (case vs. control)..."
 python "${PROJECT_ROOT}/src/pipeline/demographic_eda.py" \
     --cohort-csv "${COHORT_CSV}" \
     --output-dir "${EDA_DIR}"
 
 # ── Step 5: Feature engineering ──────────────────────────────────────────────
 echo ""
-echo "[Step 5/7] Feature engineering (4 options)..."
+echo "[Step 5/12] Feature engineering (4 options)..."
 if [[ "${LOCAL}" == true ]]; then
     python "${PROJECT_ROOT}/src/pipeline/feature_engineering.py" \
         --cohort-csv "${COHORT_CSV}" \
@@ -159,7 +164,7 @@ fi
 
 # ── Step 6: ML pipeline ─────────────────────────────────────────────────────
 echo ""
-echo "[Step 6/7] ML pipeline..."
+echo "[Step 6/12] ML pipeline..."
 if [[ "${LOCAL}" == true ]]; then
     python "${PROJECT_ROOT}/src/pipeline/ml_pipeline.py" \
         --data-dir "${NPZ_DIR}" \
@@ -183,7 +188,7 @@ fi
 
 # ── Step 7: Feature importance plots ────────────────────────────────────────
 echo ""
-echo "[Step 7/7] Feature importance plots..."
+echo "[Step 7/12] Feature importance plots..."
 if [[ "${LOCAL}" == true ]]; then
     python "${PROJECT_ROOT}/src/pipeline/feature_importance.py" \
         --data-dir "${NPZ_DIR}" \
@@ -205,13 +210,109 @@ else
     echo "  Slurm job finished."
 fi
 
+INTERNAL_OPT1_NPZ="${NPZ_DIR}/features_option1_categorical.npz"
+EXTVAL_COHORT_CSV="${CSV_DIR}/proj1_ie_triage_extval_cohort.csv"
+EXTVAL_NPZ="${NPZ_DIR}/extval_features_option1_categorical.npz"
+
+# ── Step 8: External-validation cohort creation (MC-MED) ────────────────────
+echo ""
+echo "[Step 8/12] External-validation cohort creation (MC-MED)..."
+python "${PROJECT_ROOT}/src/ext_val_pipeline/cohort_creation.py" \
+    --mc-med-dir "${MC_MED_DIR}" \
+    --output-dir "${CSV_DIR}"
+
+# ── Step 9: Table 2 (external-validation cohort characteristics) ────────────
+echo ""
+echo "[Step 9/12] Generating Table 2 (MC-MED cohort)..."
+python "${PROJECT_ROOT}/src/ext_val_pipeline/table2.py" \
+    --cohort-csv "${EXTVAL_COHORT_CSV}" \
+    --csv-dir "${CSV_DIR}" \
+    --plot-dir "${EXT_VAL_DIR}"
+
+# ── Step 10: External-validation feature engineering (categorical only) ─────
+echo ""
+echo "[Step 10/12] External-validation feature engineering (categorical CC)..."
+if [[ "${LOCAL}" == true ]]; then
+    python "${PROJECT_ROOT}/src/ext_val_pipeline/feature_engineering.py" \
+        --cohort-csv "${EXTVAL_COHORT_CSV}" \
+        --internal-npz "${INTERNAL_OPT1_NPZ}" \
+        --output-dir "${NPZ_DIR}"
+else
+    echo "  Submitting Slurm job (waiting for completion)..."
+    sbatch --wait \
+        --partition="${PARTITION_CPU}" \
+        --cpus-per-task="${CPUS_CPU}" \
+        --mem="${MEM}" \
+        --time="${TIME_ML}" \
+        --output="${LOG_DIR}/%x_%j.out" \
+        --error="${LOG_DIR}/%x_%j.err" \
+        --job-name=ie_extval_feat \
+        --wrap="module load anaconda3/2023.09-0-aqbc && eval \"\$(conda shell.bash hook)\" && conda activate ${CONDA_ENV} && \
+                python ${PROJECT_ROOT}/src/ext_val_pipeline/feature_engineering.py \
+                    --cohort-csv ${EXTVAL_COHORT_CSV} \
+                    --internal-npz ${INTERNAL_OPT1_NPZ} \
+                    --output-dir ${NPZ_DIR}"
+    echo "  Slurm job finished."
+fi
+
+# ── Step 11: External-validation ML pipeline (RF on internal → predict MC-MED) ─
+echo ""
+echo "[Step 11/12] External-validation ML pipeline..."
+if [[ "${LOCAL}" == true ]]; then
+    python "${PROJECT_ROOT}/src/ext_val_pipeline/ml_pipeline.py" \
+        --internal-npz "${INTERNAL_OPT1_NPZ}" \
+        --external-npz "${EXTVAL_NPZ}" \
+        --output-dir "${EXT_VAL_DIR}"
+else
+    echo "  Submitting Slurm job (waiting for completion)..."
+    sbatch --wait \
+        --partition="${PARTITION_CPU}" \
+        --cpus-per-task="${CPUS_CPU}" \
+        --mem="${MEM}" \
+        --time="${TIME_ML}" \
+        --output="${LOG_DIR}/%x_%j.out" \
+        --error="${LOG_DIR}/%x_%j.err" \
+        --job-name=ie_extval_ml \
+        --wrap="module load anaconda3/2023.09-0-aqbc && eval \"\$(conda shell.bash hook)\" && conda activate ${CONDA_ENV} && \
+                python ${PROJECT_ROOT}/src/ext_val_pipeline/ml_pipeline.py \
+                    --internal-npz ${INTERNAL_OPT1_NPZ} \
+                    --external-npz ${EXTVAL_NPZ} \
+                    --output-dir ${EXT_VAL_DIR}"
+    echo "  Slurm job finished."
+fi
+
+# ── Step 12: External-validation feature importance ─────────────────────────
+echo ""
+echo "[Step 12/12] External-validation feature importance plot..."
+if [[ "${LOCAL}" == true ]]; then
+    python "${PROJECT_ROOT}/src/ext_val_pipeline/feature_importance.py" \
+        --internal-npz "${INTERNAL_OPT1_NPZ}" \
+        --output-dir "${EXT_VAL_DIR}"
+else
+    echo "  Submitting Slurm job (waiting for completion)..."
+    sbatch --wait \
+        --partition="${PARTITION_CPU}" \
+        --cpus-per-task="${CPUS_CPU}" \
+        --mem="${MEM}" \
+        --time="${TIME_ML}" \
+        --output="${LOG_DIR}/%x_%j.out" \
+        --error="${LOG_DIR}/%x_%j.err" \
+        --job-name=ie_extval_fimp \
+        --wrap="module load anaconda3/2023.09-0-aqbc && eval \"\$(conda shell.bash hook)\" && conda activate ${CONDA_ENV} && \
+                python ${PROJECT_ROOT}/src/ext_val_pipeline/feature_importance.py \
+                    --internal-npz ${INTERNAL_OPT1_NPZ} \
+                    --output-dir ${EXT_VAL_DIR}"
+    echo "  Slurm job finished."
+fi
+
 echo ""
 echo "═══════════════════════════════════════════════════════════════════"
 echo "  Pipeline complete!"
-echo "  Cohort & summaries: ${CSV_DIR}/"
-echo "  EDA plots & tables: ${EDA_DIR}/"
-echo "  Feature matrices:   ${NPZ_DIR}/"
-echo "  ML results & plots: ${ML_DIR}/"
-echo "  Feature imp. plots: ${FEAT_IMP_DIR}/"
-echo "  Full report:        ${REPORT}"
+echo "  Cohort & summaries:   ${CSV_DIR}/"
+echo "  EDA plots & tables:   ${EDA_DIR}/"
+echo "  Feature matrices:     ${NPZ_DIR}/"
+echo "  ML results & plots:   ${ML_DIR}/"
+echo "  Feature imp. plots:   ${FEAT_IMP_DIR}/"
+echo "  External validation:  ${EXT_VAL_DIR}/"
+echo "  Full report:          ${REPORT}"
 echo "═══════════════════════════════════════════════════════════════════"
